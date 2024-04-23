@@ -1,0 +1,20 @@
+{
+    "fields": {
+        "total": "total_length",
+        "tail": "tail_length",
+        "hf":"hind_foot_with_claw",
+        "ear": "ear_from_notch",
+        "Notch": "ear_from_notch",
+        "Crown": "ear_from_crown",
+        "wt": "weight",
+        "repro comments": "reproductive_data",
+        "testes L": "testes_length",
+        "testes W": "testes_width",
+        "emb count": "",
+        "emb L": "",
+        "emb R": "",
+        "emb CR": "crown-rump_length",
+        "unformatted_measurements":"remarks",
+        "collectors": "determiner"
+        }
+}
