@@ -12,7 +12,67 @@ from decimal import Decimal, InvalidOperation
 from enum import Enum
 from typing import Union, Callable, TypeVar
 
-expected_columns = [
+
+
+class WeightUnit(Enum):
+    GRAMS = "g"
+    OUNCES = "oz"
+
+    def from_string(value: str):
+        if value in ["g", "grams"]:
+            return WeightUnit.GRAMS
+        elif value in ["oz", "ounces"]:
+            return WeightUnit.OUNCES
+        elif value is None:
+            return None
+        else:
+            raise ValueError("Could not parse distance unit from value", value)
+        
+    @staticmethod
+    def split_value(value: str):
+        matched = re.match(r"^(.+)\s*(g|grams|oz|ounces)?$", value.strip())
+
+        if matched is None:
+            raise ValueError("Could not parse value", value)
+        
+        value_cleaned = matched.group(1)
+        extracted_unit = matched.group(2)
+
+        return value_cleaned, WeightUnit.from_string(extracted_unit) if extracted_unit is not None else None
+
+class DistanceUnit(Enum):
+    INCHES = "in"
+    MILLIMETERS = "mm"
+    CENTIMETERS = "cm"
+
+    @staticmethod
+    def from_string(value: str):
+        if value == "in" or value == "in." or value == "inches":
+            return DistanceUnit.INCHES
+        elif value == "mm":
+            return DistanceUnit.MILLIMETERS
+        elif value == "cm":
+            return DistanceUnit.CENTIMETERS
+        elif value is None:
+            return None
+        else:
+            raise ValueError("Could not parse distance unit from value", value)
+        
+    @staticmethod
+    def split_value(value: str):
+        matched = re.match(r"^(.+)\s*(mm|in|in\.|inches)?$", value.strip())
+
+        if matched is None:
+            return value.strip(), None
+        
+        value_cleaned = matched.group(1)
+        extracted_unit = matched.group(2)
+
+        return value_cleaned, DistanceUnit.from_string(extracted_unit) if extracted_unit is not None else None
+
+
+class SheetParser:
+    expected_columns = [
     {
         "column_name": "MVZ #",
         "valid_names": ["MVZ #", "MVZ#", "catalognumberint"],
@@ -146,68 +206,10 @@ expected_columns = [
         "optional": True
     }]
 
-class WeightUnit(Enum):
-    GRAMS = "g"
-    OUNCES = "oz"
-
-    def from_string(value: str):
-        if value in ["g", "grams"]:
-            return WeightUnit.GRAMS
-        elif value in ["oz", "ounces"]:
-            return WeightUnit.OUNCES
-        elif value is None:
-            return None
-        else:
-            raise ValueError("Could not parse distance unit from value", value)
-        
-    @staticmethod
-    def split_value(value: str):
-        matched = re.match(r"^(.+)\s*(g|grams|oz|ounces)?$", value.strip())
-
-        if matched is None:
-            raise ValueError("Could not parse value", value)
-        
-        value_cleaned = matched.group(1)
-        extracted_unit = matched.group(2)
-
-        return value_cleaned, WeightUnit.from_string(extracted_unit) if extracted_unit is not None else None
-
-class DistanceUnit(Enum):
-    INCHES = "in"
-    MILLIMETERS = "mm"
-    CENTIMETERS = "cm"
-
-    @staticmethod
-    def from_string(value: str):
-        if value == "in" or value == "in." or value == "inches":
-            return DistanceUnit.INCHES
-        elif value == "mm":
-            return DistanceUnit.MILLIMETERS
-        elif value == "cm":
-            return DistanceUnit.CENTIMETERS
-        elif value is None:
-            return None
-        else:
-            raise ValueError("Could not parse distance unit from value", value)
-        
-    @staticmethod
-    def split_value(value: str):
-        matched = re.match(r"^(.+)\s*(mm|in|in\.|inches)?$", value.strip())
-
-        if matched is None:
-            return value.strip(), None
-        
-        value_cleaned = matched.group(1)
-        extracted_unit = matched.group(2)
-
-        return value_cleaned, DistanceUnit.from_string(extracted_unit) if extracted_unit is not None else None
-
-
-class SheetParser:
     def verify_columns_exist(columns):
         missing_columns = []
 
-        for expected_column in expected_columns:
+        for expected_column in SheetParser.expected_columns:
             found = False
             for valid_name in expected_column["valid_names"]:
                 if valid_name in columns:
@@ -237,7 +239,7 @@ class SheetParser:
     def extract_record(raw_record):
         record = {}
 
-        for expected_column in expected_columns:
+        for expected_column in SheetParser.expected_columns:
             found = False
             for valid_name in expected_column["valid_names"]:
                 if valid_name in raw_record:
