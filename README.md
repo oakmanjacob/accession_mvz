@@ -20,7 +20,7 @@ For example:
 
 14609_numerical_attributes.csv
 
-| guid            | attribute    | attribute_value | attribute_units | attribute_date | collector       |
+| guid            | attribute    | attribute_value | attribute_units | attribute_date | determiner      |
 | --------------- | ------------ | --------------- | --------------- | -------------- | --------------- |
 | MVZ:Mamm:224127 | total length | 192             | mm              | 2009-09-15     | James L. Patton |
 | MVZ:Mamm:224127 | weight       | 41              | g               | 2009-09-15     | James L. Patton |
@@ -28,7 +28,7 @@ For example:
 
 14609_text_attributes.csv
 
-| guid            | attribute         | attribute_value             | attribute_date | collector       |
+| guid            | attribute         | attribute_value             | attribute_date | determiner      |
 | --------------- | ----------------- | --------------------------- | -------------- | --------------- |
 | MVZ:Mamm:224127 | reproductive data | t=3x2 mm                    | 2009-09-15     | James L. Patton |
 | MVZ:Mamm:224226 | reproductive data | post lactating, scars 2R-2L | 2009-09-15     | James L. Patton |

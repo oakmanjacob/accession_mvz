@@ -146,6 +146,10 @@ def parse_whole(value) -> int:
     if isinstance(value, int):
         return value
     
+    value_cleaned = re.sub("mm$", "", value.strip()).strip()
+    if value_cleaned != value:
+        print(value, "-->", value_cleaned)
+    
     # 2+
 
     # 5+-
@@ -165,7 +169,7 @@ def parse_whole(value) -> int:
     # 15in 15 in 
 
     # 5
-    return int(value)
+    return int(value_cleaned)
 
 def is_valid_decimal(value) -> bool:
     try:
@@ -181,15 +185,19 @@ def parse_decimal(value) -> float:
     if isinstance(value, float):
         return value
     
+    value_cleaned = re.sub("mm$", "", value.strip()).strip()
+    if value_cleaned != value:
+        print(value, "-->", value_cleaned)
+    
     try:
-        return float(parse_decimal(value))
+        return float(parse_decimal(value_cleaned))
     except:
-        matched = re.match("([0-9]+) ([0-9+])/(2|4|8)", value.strip())
+        matched = re.match("([0-9]+) ([0-9+])/([1-9][0-9]*)", value_cleaned)
 
         if matched:
             return float(matched.group(1)) + float(matched.group(2)) / float(matched.group(3))
         else:
-            return float(value.strip())
+            return float(value_cleaned)
 
 
 def verify_columns_exist(columns):
