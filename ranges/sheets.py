@@ -261,7 +261,7 @@ class SheetParser:
         remarks = None
         try:
             value = int(raw_value.strip())
-        except InvalidOperation:
+        except ValueError:
             remarks = raw_value
 
         return value, remarks

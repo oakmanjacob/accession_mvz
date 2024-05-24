@@ -235,6 +235,5 @@ class TestSpecimenParser(unittest.TestCase):
             self.assertIn(expected_unitless_attribute, unitless_attributes)
 
 
-
 if __name__ == "__main__":
     unittest.main()
