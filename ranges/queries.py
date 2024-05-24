@@ -4,7 +4,7 @@ attributes = ["total length", "tail length", "hind foot with claw", "ear from no
 guid_prefix = "MVZ:Mamm"
 species = "Peromyscus maniculatus"
 
-fields = ["flat.guid", "flat.subspecies", "CAST(flat.cat_num as INTEGER) as catalognumberint", "flat.collectors", "state_prov", "county", "flat.spec_locality", "collectornumber","verbatim_date", "parts", "sex", "parts"]
+fields = ["flat.guid", "flat.subspecies", "CAST(flat.cat_num as INTEGER) as catalognumberint", "flat.collectors", "state_prov", "county", "flat.spec_locality", "collectornumber","verbatim_date", "parts", "sex"]
 fields.extend([f"a{key}.attribute_value as \"{value}\"" for key, value in enumerate(attributes)])
 
 tables = ["flat"]
