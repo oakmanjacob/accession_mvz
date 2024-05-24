@@ -1,3 +1,4 @@
 sqlparse
 pandas
 openpyxl
+deepdiff

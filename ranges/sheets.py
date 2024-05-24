@@ -83,7 +83,7 @@ class SheetParser:
     },
     {
         "column_name": "repro comments",
-        "valid_names": ["units"],
+        "valid_names": ["repro comments"],
         "type": "text",
         "optional": False
     },
@@ -142,19 +142,7 @@ class SheetParser:
         "optional": True
     }]
 
-    def verify_columns_exist(columns):
-        missing_columns = []
-
-        for expected_column in SheetParser.expected_columns:
-            found = False
-            for valid_name in expected_column["valid_names"]:
-                if valid_name in columns:
-                    found = True
-            
-            if not found and not expected_column["optional"]:
-                missing_columns.append(expected_column["column_name"])
-
-        return missing_columns
+    
 
     def is_recorded(raw_value):
         if raw_value is None:
@@ -171,6 +159,31 @@ class SheetParser:
                 return False
         
         return True
+    
+    def parse_mvz_guid(value: str) -> str:
+        if value is None:
+            raise ValueError("Cannot parse guid from None value")
+
+        matched = re.match(r"^(?:MVZ)?:?(?:Mamm)?:?([0-9]+)$", value)
+
+        if matched is None:
+            raise ValueError("Couldn't parse guid from value", f"'{value}'")
+
+        return f"MVZ:Mamm:{int(matched.group(1))}"
+
+    def verify_columns_exist(columns):
+        missing_columns = []
+
+        for expected_column in SheetParser.expected_columns:
+            found = False
+            for valid_name in expected_column["valid_names"]:
+                if valid_name in columns:
+                    found = True
+            
+            if not found and not expected_column["optional"]:
+                missing_columns.append(expected_column["column_name"])
+
+        return missing_columns
 
     def extract_record(raw_record):
         record = {}
@@ -193,11 +206,14 @@ class SheetParser:
             
             if not found and expected_column["optional"]:
                 record[expected_column["column_name"]] = None
+        
+        if record["Notch"] is None:
+            record["Notch"] = record["ear"]
+
+        if record["ear"] is not None and record["Notch"] != record["ear"]:
+            raise ValueError("Ear and Notch column mismatched", record["ear"], record["Notch"])
 
         return record
-    
-    def parse_mvz_guid(value: str) -> str:
-        return f"MVZ:Mamm:{int(value)}"
 
     
     def parse_numerical_attribute(raw_value: str,
@@ -223,7 +239,7 @@ class SheetParser:
             if matched:
                 remarks = value_cleaned
                 value = Decimal(matched.group(1) or 0) + \
-                    Decimal(matched.group(2)) / Decimal(matched.group(3)).quantize(Decimal('0.01'))
+                    (Decimal(matched.group(2)) / Decimal(matched.group(3))).quantize(Decimal('0.01'), rounding="ROUND_HALF_EVEN")
             else:
                 value = Decimal(value_cleaned)
         except InvalidOperation:
@@ -236,3 +252,16 @@ class SheetParser:
             extracted_unit = unit or default
 
         return value, extracted_unit, remarks
+    
+    def parse_integer_attribute(raw_value: str) -> tuple[int, str]:
+        if raw_value is None:
+            return None, None
+
+        value = None
+        remarks = None
+        try:
+            value = int(raw_value.strip())
+        except InvalidOperation:
+            remarks = raw_value
+
+        return value, remarks

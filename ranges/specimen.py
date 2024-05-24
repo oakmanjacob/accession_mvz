@@ -27,9 +27,6 @@ class Specimen:
     scars: str
     reproductive_data: str
 
-    def __init__(self):
-        pass
-
     def __init__(self, record):
         self.guid = SheetParser.parse_mvz_guid(record["MVZ #"])
         self.collectors = record["collector"]
@@ -69,15 +66,25 @@ class Specimen:
         self.testes_width = SheetParser.parse_numerical_attribute(record["testes W"],
                                                              distance_unit,
                                                              DistanceUnit.MILLIMETERS)
+
+        self.embryo_count = SheetParser.parse_integer_attribute(record["emb count"])
+
+        self.embryo_count_left = SheetParser.parse_integer_attribute(record["embs L"])
+
+        self.embryo_count_right = SheetParser.parse_integer_attribute(record["embs R"])
         
         self.crown_rump_length = SheetParser.parse_numerical_attribute(record["emb CR"],
                                                              distance_unit,
                                                              DistanceUnit.MILLIMETERS)
         
         self.unformatted_measurements = record["unformatted measurements"]
+        self.reproductive_data = record["repro comments"]
+        self.scars = record["scars"]
+
         
     def export_attributes(self, attribute_date) -> list:
         attributes = []
+        unitless_attributes = []
         unparsed_values = []
 
         for value, attribute_type in [(self.total_length, "total length"),
@@ -85,7 +92,8 @@ class Specimen:
                                       (self.hind_foot_with_claw, "hind foot with claw"),
                                       (self.ear_from_notch, "ear from notch"),
                                       (self.ear_from_crown, "ear from crown"),
-                                      (self.weight, "weight")]:
+                                      (self.weight, "weight"),
+                                      (self.crown_rump_length, "crown-rump length"),]:
             if value[0] is not None:
                 attributes.append({
                     "guid": self.guid,
@@ -104,7 +112,7 @@ class Specimen:
             unparsed_values.append(self.unformatted_measurements)
 
         if len(unparsed_values) > 0:
-            attributes.append({
+            unitless_attributes.append({
                 "guid": self.guid,
                 "attribute": "unformatted measurements",
                 "attribute_value": ", ".join(unparsed_values),
@@ -112,7 +120,16 @@ class Specimen:
                 "determiner": self.collectors,
             })
 
-        return attributes
+        if self.reproductive_data is not None:
+            unitless_attributes.append({
+                "guid": self.guid,
+                "attribute": "reproductive data",
+                "attribute_value": self.reproductive_data,
+                "attribute_date": attribute_date,
+                "determiner": self.collectors,
+            })
+
+        return attributes, unitless_attributes
 
 
 def import_excel(file_name):
