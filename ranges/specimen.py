@@ -31,6 +31,9 @@ class Specimen:
         self.guid = SheetParser.parse_mvz_guid(record["MVZ #"])
         self.collectors = record["collector"]
 
+        if record["REVIEW NEEDED"]:
+            raise ReviewNeededException(self.guid, record["REVIEW NEEDED"])
+
         distance_unit = DistanceUnit.from_string(record["unit"])
 
         self.total_length = SheetParser.parse_numerical_attribute(record["total"],
@@ -130,3 +133,7 @@ class Specimen:
             })
 
         return attributes, unitless_attributes
+
+
+class ReviewNeededException(Exception):
+    pass

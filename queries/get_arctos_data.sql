@@ -1,6 +1,7 @@
 SELECT
     flat.collection_object_id,
     guid,
+    ended_date,
     a0.attribute_value AS "total length",
     a1.attribute_value AS "tail length",
     a2.attribute_value AS "hind foot with claw",
@@ -54,4 +55,3 @@ AND
     genus in ('Anourosorex', 'Myosorex', 'Notiosorex', 'Sorex', 'Sorex; Sorex', 'Soriculus', 'Suncus')
 ORDER BY guid asc
 limit 9000
-OFFSET 9000

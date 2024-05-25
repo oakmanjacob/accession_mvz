@@ -22,12 +22,6 @@ class SheetParser:
         "optional": False
     },
     {
-        "column_name": "date",
-        "valid_names": ["date"],
-        "type": "text",
-        "optional": False
-    },
-    {
         "column_name": "total",
         "valid_names": ["total"],
         "type": "decimal",
