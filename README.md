@@ -11,6 +11,11 @@ pip install -r requirements.txt
 python process_accession.py
 ```
 
+## Unit Tests
+```
+python -m unittest
+```
+
 ## Output Format (CSV)
 Uploading to Arctos requires attributes to be split into two files.
  1. The first contains all numerical values and the corresponding units.

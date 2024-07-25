@@ -97,31 +97,31 @@ class TestSpecimenParser(unittest.TestCase):
             }
         ]
 
-        cleaned_record = SheetParser.extract_record(raw_record)
-
-        specimen = Specimen(cleaned_record)
+        specimen = Specimen.from_raw_record(raw_record)
 
         self.assertEqual(specimen.guid, "MVZ:Mamm:12345")
         self.assertEqual(specimen.collectors, "Richard M. Warner")
-        self.assertEqual(specimen.unformatted_measurements, "Rt. side eaten by Siphid beetle in trap")
-        self.assertEqual(specimen.reproductive_data, "T 3x2")
-        self.assertIsNone(specimen.scars)
+        self.assertEqual(specimen.common_data.unformatted_measurements, "Rt. side eaten by Siphid beetle in trap")
+        self.assertEqual(specimen.reproductive_data.repro_comments, "T 3x2")
+        self.assertIsNone(specimen.reproductive_data.scars)
 
-        self.assertEqual(specimen.total_length, (Decimal(95), DistanceUnit.MILLIMETERS, None))
-        self.assertEqual(specimen.tail_length, (Decimal(41), DistanceUnit.MILLIMETERS, None))
-        self.assertEqual(specimen.hind_foot_with_claw, (Decimal(11), DistanceUnit.MILLIMETERS, None))
-        self.assertEqual(specimen.ear_from_notch, (Decimal(6), DistanceUnit.MILLIMETERS, None))
-        self.assertEqual(specimen.ear_from_crown, (None, None, None))
-        self.assertEqual(specimen.weight, (Decimal(4), WeightUnit.GRAMS, None))
+        self.assertEqual(specimen.common_data.total_length, (Decimal(95), DistanceUnit.MILLIMETERS, None))
+        self.assertEqual(specimen.common_data.tail_length, (Decimal(41), DistanceUnit.MILLIMETERS, None))
+        self.assertEqual(specimen.common_data.hind_foot_with_claw, (Decimal(11), DistanceUnit.MILLIMETERS, None))
+        self.assertEqual(specimen.common_data.ear_from_notch, (Decimal(6), DistanceUnit.MILLIMETERS, None))
+        self.assertEqual(specimen.common_data.ear_from_crown, (None, None, None))
+        self.assertEqual(specimen.common_data.weight, (Decimal(4), WeightUnit.GRAMS, None))
         
-        self.assertEqual(specimen.testes_length, (Decimal(3), DistanceUnit.MILLIMETERS, None))
-        self.assertEqual(specimen.testes_width, (Decimal(2), DistanceUnit.MILLIMETERS, None))
-        self.assertEqual(specimen.embryo_count, (None, None))
-        self.assertEqual(specimen.embryo_count_left, (None, None))
-        self.assertEqual(specimen.embryo_count_right, (None, None))
-        self.assertEqual(specimen.crown_rump_length, (None, None, None))
+        self.assertEqual(specimen.reproductive_data.testes_length, (Decimal(3), DistanceUnit.MILLIMETERS, None))
+        self.assertEqual(specimen.reproductive_data.testes_width, (Decimal(2), DistanceUnit.MILLIMETERS, None))
+        self.assertEqual(specimen.reproductive_data.embryo_count, (None, None))
+        self.assertEqual(specimen.reproductive_data.embryo_count_left, (None, None))
+        self.assertEqual(specimen.reproductive_data.embryo_count_right, (None, None))
+        self.assertEqual(specimen.reproductive_data.crown_rump_length, (None, None, None))
 
-        attributes, unitless_attributes = specimen.export_attributes("1982-06-28")
+        specimen.collected_date = "1982-06-28"
+
+        attributes, unitless_attributes = specimen.export_attributes()
 
         self.assertEqual(len(attributes), len(expected_attributes))
 
@@ -198,31 +198,31 @@ class TestSpecimenParser(unittest.TestCase):
             },
         ]
 
-        cleaned_record = SheetParser.extract_record(raw_record)
-
-        specimen = Specimen(cleaned_record)
+        specimen = Specimen.from_raw_record(raw_record)
 
         self.assertEqual(specimen.guid, "MVZ:Mamm:12345")
         self.assertEqual(specimen.collectors, "Richard M. Warner")
-        self.assertIsNone(specimen.unformatted_measurements)
-        self.assertIsNone(specimen.reproductive_data)
-        self.assertIsNone(specimen.scars)
+        self.assertIsNone(specimen.common_data.unformatted_measurements)
+        self.assertIsNone(specimen.reproductive_data.repro_comments)
+        self.assertIsNone(specimen.reproductive_data.scars)
 
-        self.assertEqual(specimen.total_length, (Decimal("14.38"), DistanceUnit.INCHES, "14 3/8"))
-        self.assertEqual(specimen.tail_length, (None, DistanceUnit.INCHES, "13+"))
-        self.assertEqual(specimen.hind_foot_with_claw, (Decimal("4.62"), DistanceUnit.INCHES, "4 5/8"))
-        self.assertEqual(specimen.ear_from_notch, (None, None, None))
-        self.assertEqual(specimen.ear_from_crown, (None, None, None))
-        self.assertEqual(specimen.weight, (None, WeightUnit.GRAMS, "4*"))
+        self.assertEqual(specimen.common_data.total_length, (Decimal("14.38"), DistanceUnit.INCHES, "14 3/8"))
+        self.assertEqual(specimen.common_data.tail_length, (None, DistanceUnit.INCHES, "13+"))
+        self.assertEqual(specimen.common_data.hind_foot_with_claw, (Decimal("4.62"), DistanceUnit.INCHES, "4 5/8"))
+        self.assertEqual(specimen.common_data.ear_from_notch, (None, None, None))
+        self.assertEqual(specimen.common_data.ear_from_crown, (None, None, None))
+        self.assertEqual(specimen.common_data.weight, (None, WeightUnit.GRAMS, "4*"))
         
-        self.assertEqual(specimen.testes_length, (None, None, None))
-        self.assertEqual(specimen.testes_width, (None, None, None))
-        self.assertEqual(specimen.embryo_count, (3, None))
-        self.assertEqual(specimen.embryo_count_left, (2, None))
-        self.assertEqual(specimen.embryo_count_right, (1, None))
-        self.assertEqual(specimen.crown_rump_length, (Decimal("3.123"), DistanceUnit.INCHES, None))
+        self.assertEqual(specimen.reproductive_data.testes_length, (None, None, None))
+        self.assertEqual(specimen.reproductive_data.testes_width, (None, None, None))
+        self.assertEqual(specimen.reproductive_data.embryo_count, (3, None))
+        self.assertEqual(specimen.reproductive_data.embryo_count_left, (2, None))
+        self.assertEqual(specimen.reproductive_data.embryo_count_right, (1, None))
+        self.assertEqual(specimen.reproductive_data.crown_rump_length, (Decimal("3.123"), DistanceUnit.INCHES, None))
 
-        attributes, unitless_attributes = specimen.export_attributes("1982-06-28")
+        specimen.collected_date = "1982-06-28"
+
+        attributes, unitless_attributes = specimen.export_attributes()
 
         self.assertEqual(len(attributes), len(expected_attributes))
 

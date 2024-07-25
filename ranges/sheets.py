@@ -10,8 +10,8 @@ from ranges.units import DistanceUnit, WeightUnit
 class SheetParser:
     expected_columns = [
     {
-        "column_name": "MVZ #",
-        "valid_names": ["MVZ #", "MVZ#", "catalognumberint"],
+        "column_name": "mvz_num",
+        "valid_names": ["MVZ #", "MVZ#", "catalognumberint", "mvz"],
         "type": "whole",
         "optional": False
     },
@@ -19,22 +19,28 @@ class SheetParser:
         "column_name": "collector",
         "valid_names": ["collector", "collectors", "COLLECTORS"],
         "type": "text",
-        "optional": False
+        "optional": True
     },
     {
-        "column_name": "total",
+        "column_name": "date",
+        "valid_names": ["date"],
+        "type": "text",
+        "optional": True
+    },
+    {
+        "column_name": "total_length",
         "valid_names": ["total"],
         "type": "decimal",
         "optional": False
     },
     {
-        "column_name": "tail",
+        "column_name": "tail_length",
         "valid_names": ["tail"],
         "type": "decimal",
         "optional": False
     },
     {
-        "column_name": "hf",
+        "column_name": "hind_foot_with_claw",
         "valid_names": ["hf"],
         "type": "decimal",
         "optional": False
@@ -43,76 +49,76 @@ class SheetParser:
         "column_name": "ear",
         "valid_names": ["ear"],
         "type": "decimal",
-        "optional": False
+        "optional": True
     },
     {
-        "column_name": "Notch",
+        "column_name": "ear_from_notch",
         "valid_names": ["Notch"],
         "type": "decimal",
-        "optional": False
+        "optional": True
     },
     {
-        "column_name": "Crown",
+        "column_name": "ear_from_crown",
         "valid_names": ["Crown"],
         "type": "decimal",
-        "optional": False
+        "optional": True
     },
     {
-        "column_name": "unit",
+        "column_name": "distance_unit",
         "valid_names": ["unit"],
         "type": "distance_unit",
         "optional": False
     },
     {
-        "column_name": "wt",
-        "valid_names": ["wt"],
+        "column_name": "weight",
+        "valid_names": ["wt", "weight"],
         "type": "decimal",
         "optional": False
     },
     {
-        "column_name": "units",
+        "column_name": "weight_unit",
         "valid_names": ["units"],
         "type": "mass_unit",
         "optional": False
     },
     {
-        "column_name": "repro comments",
+        "column_name": "repro_comments",
         "valid_names": ["repro comments"],
         "type": "text",
         "optional": False
     },
     {
-        "column_name": "testes L",
+        "column_name": "testes_length",
         "valid_names": ["testes L", "testis L"],
         "type": "decimal",
         "optional": True
     },
     {
-        "column_name": "testes W",
+        "column_name": "testes_width",
         "valid_names": ["testes W", "testes R", "testis W", "testis R"],
         "type": "decimal",
         "optional": True
     },
     {
-        "column_name": "emb count",
+        "column_name": "embryo_count",
         "valid_names": ["emb count"],
         "type": "whole",
         "optional": True
     },
     {
-        "column_name": "embs L",
+        "column_name": "embryo_count_left",
         "valid_names": ["embs L"],
         "type": "whole",
         "optional": True
     },
     {
-        "column_name": "embs R",
+        "column_name": "embryo_count_right",
         "valid_names": ["embs R"],
         "type": "whole",
         "optional": True
     },
     {
-        "column_name": "emb CR",
+        "column_name": "crown_rump_length",
         "valid_names": ["emb CR"],
         "type": "decimal",
         "optional": True
@@ -124,13 +130,13 @@ class SheetParser:
         "optional": True
     },
     {
-        "column_name": "unformatted measurements",
+        "column_name": "unformatted_measurements",
         "valid_names": ["unformatted measurements"],
         "type": "text",
         "optional": True
     },
     {
-        "column_name": "REVIEW NEEDED",
+        "column_name": "REVIEW_NEEDED",
         "valid_names": ["REVIEW NEEDED"],
         "type": "text",
         "optional": True
@@ -182,6 +188,7 @@ class SheetParser:
     def extract_record(raw_record):
         record = {}
 
+        found_columns = set()
         for expected_column in SheetParser.expected_columns:
             found = False
             for valid_name in expected_column["valid_names"]:
@@ -198,15 +205,23 @@ class SheetParser:
                     found = True
                     break
             
-            if not found and expected_column["optional"]:
-                record[expected_column["column_name"]] = None
+            if not found:
+                if expected_column["optional"]:
+                    record[expected_column["column_name"]] = None
+                else:
+                    raise ValueError("Could not find field", expected_column["column_name"], raw_record)
+            else:
+                found_columns.add(expected_column["column_name"])
         
-        if record["Notch"] is None:
-            record["Notch"] = record["ear"]
+        if record["ear_from_notch"] is None:
+            record["ear_from_notch"] = record["ear"]
 
-        if record["ear"] is not None and record["Notch"] != record["ear"]:
-            raise ValueError("Ear and Notch column mismatched", record["ear"], record["Notch"])
-
+        if record["ear"] is not None and record["ear_from_notch"] != record["ear"]:
+            raise ValueError("Ear and Notch column mismatched", record["ear"], record["ear_from_notch"], raw_record)
+        
+        if "ear" not in found_columns and "ear_from_notch" not in found_columns and "ear_from_crown" not in found_columns:
+            raise ValueError("Could not find any column for ear measurements", raw_record)
+            
         return record
 
     

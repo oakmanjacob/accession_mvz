@@ -24,11 +24,16 @@ def import_excel(file_name, arctos_data):
     review_needed = []
 
     for raw_record in accession_data:
-        record = SheetParser.extract_record(raw_record)
-
         try:
-            specimen = Specimen(record)
-            specimen_attributes, specimen_unitless_attributes = specimen.export_attributes(arctos_data[specimen.guid]["ended_date"])
+            specimen = Specimen.from_raw_record(raw_record)
+
+            if specimen.collectors is None:
+                specimen.collectors = "Test Collector"
+
+            if specimen.collected_date is None:
+                specimen.collected_date = arctos_data[specimen.guid]["ended_date"]
+
+            specimen_attributes, specimen_unitless_attributes = specimen.export_attributes()
 
             attributes.extend(specimen_attributes)
             unitless_attributes.extend(specimen_unitless_attributes)
