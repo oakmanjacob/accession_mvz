@@ -155,7 +155,7 @@ class SheetParser:
             value_cleaned = raw_value.strip().lower()
 
             if value_cleaned in ["", "not recorded", "?", "no recorded", "already in arctos",
-                                "no measurements", "not recoded"]:
+                                "no measurements", "not recoded", "no data"]:
                 return False
         
         return True

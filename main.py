@@ -1,16 +1,15 @@
 import glob
 import math
+import logging
 
 import pandas as pd
 
 from ranges.sheets import SheetParser
 from ranges.specimen import Specimen, ReviewNeededException
 
-def import_excel(file_name, arctos_data):
+def import_excel(file_name):
     accession_data = pd.read_excel(file_name, dtype=str)
     accession_data = accession_data.to_dict(orient="records")
-
-    total_specimens = 0
 
     if len(accession_data) == 0:
         return
@@ -19,130 +18,144 @@ def import_excel(file_name, arctos_data):
     if len(missing_columns) > 0:
         print(f"Missing columns in {file_name}", missing_columns)
 
-    attributes = []
-    unitless_attributes = []
     review_needed = []
-
+    specimens = []
     for raw_record in accession_data:
         try:
             specimen = Specimen.from_raw_record(raw_record)
-
-            if specimen.collectors is None:
-                specimen.collectors = "Test Collector"
-
-            if specimen.collected_date is None:
-                specimen.collected_date = arctos_data[specimen.guid]["ended_date"]
-
-            specimen_attributes, specimen_unitless_attributes = specimen.export_attributes()
-
-            attributes.extend(specimen_attributes)
-            unitless_attributes.extend(specimen_unitless_attributes)
+            specimens.append(specimen)
         except ReviewNeededException as ex:
             review_needed.append(ex.args)
-        total_specimens = total_specimens + 1
 
-    return attributes, unitless_attributes, total_specimens, review_needed
+    return specimens, review_needed
+
+
+def get_attributes(specimens, arctos_data):
+    attributes = []
+    unitless_attributes = []
+
+    for specimen in specimens:
+        if specimen.collectors is None and specimen.guid in arctos_data:
+            specimen.collectors = arctos_data[specimen.guid]["collectors"].split(",")[0]
+
+        specimen.collected_date = arctos_data[specimen.guid]["ended_date"]
+
+        specimen_attributes, specimen_unitless_attributes = specimen.export_attributes()
+
+        attributes.extend(specimen_attributes)
+        unitless_attributes.extend(specimen_unitless_attributes)
+
+    return attributes, unitless_attributes
+
+
+def eliminate_duplicates(attributes):
+    existing_records = set()
+
+    result = []
+    for attribute in attributes:
+        key = f"{attribute['guid']}_{attribute['attribute_type']}"
+        if key in existing_records:
+            logging.warning("Duplicate entries found for guid: %s, attribute: %s", attribute["guid"], attribute["attribute_type"])
+        else:
+            existing_records.add(key)
+            result.append(attribute)
+    
+    return result
+
+def filter_attributes(attributes, arctos_data):
+    filtered_attributes = []
+    for attribute in attributes:
+        if attribute["guid"] not in arctos_data:
+            logging.warning("Guid: %s not found in arctos data!", attribute["guid"])
+        elif arctos_data[attribute["guid"]][attribute["attribute_type"]] is None or arctos_data[attribute["guid"]][attribute["attribute_type"]] == "":
+            filtered_attributes.append(attribute)
+
+    return filtered_attributes
+
+
+def summarize_data(attributes):
+    total_attribute_counts = {
+        "specimens": len(set([attribute["guid"] for attribute in attributes])),
+        "total attributes": len(attributes),
+        "total length": 0,
+        "tail length": 0,
+        "hind foot with claw": 0,
+        "ear from notch": 0,
+        "ear from crown": 0,
+        "weight": 0,
+        "crown-rump length": 0,
+        "reproductive data": 0,
+        "unformatted measurements": 0,
+    }
+
+    for attribute in attributes:
+        total_attribute_counts[attribute["attribute_type"]] = total_attribute_counts[attribute["attribute_type"]] + 1
+
+    return total_attribute_counts
 
 
 def main():
     accession_files = glob.glob(".\\data\\*.xlsx")
     accession_files.sort()
 
-    arctos_data = pd.read_csv(".\\arctos\\arctos_data.csv", dtype=str)
-    arctos_data = arctos_data.fillna("")
-    arctos_data = arctos_data.to_dict(orient="records")
-    arctos_data = {record["guid"]: record for record in arctos_data}
-
-    total_specimens = 0
-    total_attributes = []
-    total_unitless_attributes = []
-    total_review_needed = {}
+    # Import all specimens from Excel files
+    specimens = []
+    review_needed = {}
     for accession_file in accession_files:
         print(accession_file)
-        attributes, unitless_attributes, count, total_review_needed[accession_file] = import_excel(file_name=accession_file, arctos_data=arctos_data)
-        total_attributes.extend(attributes)
-        total_unitless_attributes.extend(unitless_attributes)
-        total_specimens = total_specimens + count
-        print(count)
+        file_specimens, review_needed[accession_file] = import_excel(file_name=accession_file)
+        specimens.extend(file_specimens)
 
-    print(total_specimens)
-
-    fucked_guids = set()
-
-    total_attribute_counts = {
-        "total": 0,
-        "total length": 0,
-        "tail length": 0,
-        "hind foot with claw": 0,
-        "ear from notch": 0,
-        "ear from crown": 0,
-        "weight": 0,
-        "crown-rump length": 0,
-        "reproductive data": 0,
-        "unformatted measurements": 0,
-    }
-
-    attribute_counts = {
-        "total": 0,
-        "total length": 0,
-        "tail length": 0,
-        "hind foot with claw": 0,
-        "ear from notch": 0,
-        "ear from crown": 0,
-        "weight": 0,
-        "crown-rump length": 0,
-        "reproductive data": 0,
-        "unformatted measurements": 0,
-    }
-
-    filtered_attributes = []
-    for attribute in total_attributes:
-        total_attribute_counts["total"] = total_attribute_counts["total"] + 1
-        total_attribute_counts[attribute["attribute"]] = total_attribute_counts[attribute["attribute"]] + 1
-        if attribute["guid"] not in arctos_data:
-            fucked_guids.add(attribute["guid"])
-        elif arctos_data[attribute["guid"]][attribute["attribute"]] is None or arctos_data[attribute["guid"]][attribute["attribute"]] == "":
-            filtered_attributes.append(attribute)
-            attribute_counts[attribute["attribute"]] = attribute_counts[attribute["attribute"]] + 1
-            attribute_counts["total"] = attribute_counts["total"] + 1
-
-
-    csv_dataframe = pd.DataFrame.from_records(filtered_attributes)
-    csv_dataframe.to_csv(f"./output/numerical_attributes.csv", index=False)
-
-    filtered_text_attributes = []
-    for attribute in total_unitless_attributes:
-        total_attribute_counts["total"] = total_attribute_counts["total"] + 1
-        total_attribute_counts[attribute["attribute"]] = total_attribute_counts[attribute["attribute"]] + 1
-        if attribute["guid"] not in arctos_data:
-            fucked_guids.add(attribute["guid"])
-        elif arctos_data[attribute["guid"]][attribute["attribute"]] is None or arctos_data[attribute["guid"]][attribute["attribute"]] == "":
-            filtered_text_attributes.append(attribute)
-            attribute_counts[attribute["attribute"]] = attribute_counts[attribute["attribute"]] + 1
-            attribute_counts["total"] = attribute_counts["total"] + 1
-    
-    csv_dataframe = pd.DataFrame.from_records(filtered_text_attributes)
-    csv_dataframe.to_csv(f"./output/text_attributes.csv", index=False)
-
-    print(", ".join([f"'{fucked_guid}'" for fucked_guid in fucked_guids]))
-
-    print("Total Attributes Processed:", total_attribute_counts)
-    print("Attributes to be uploaded: ", attribute_counts)
-
-
-    total_review_needed_csv = []
-
-    for key, value in total_review_needed.items():
+    # Export review needed files
+    review_needed_csv = []
+    for key, value in review_needed.items():
         if len(value) > 0:
             for specimen in value:
-                total_review_needed_csv.append({
+                review_needed_csv.append({
                     "sheet": key,
                     "guid": specimen[0],
                     "reason": specimen[1]
                 })
 
-    total_review_needed_csv = pd.DataFrame.from_records(total_review_needed_csv)
-    total_review_needed_csv.to_csv(f"./output/review_needed.csv", index=False)
+    review_needed_csv = pd.DataFrame.from_records(review_needed_csv)
+    review_needed_csv.to_csv(f"./output/review_needed.csv", index=False)
+        
+    # Export list of guids for arctos data input
+    specimen_guids = set(specimen.guid for specimen in specimens)
+    with open("./output/required_guids.txt", "w", encoding="utf8") as guids_file:
+        guids_file.write(", ".join([f"'{specimen_guid}'" for specimen_guid in specimen_guids]))
+    
+    # Import arctos data
+    arctos_data = pd.read_csv(".\\arctos\\arctos_data_accn14462.csv", dtype=str)
+    arctos_data = arctos_data.fillna("")
+    arctos_data = arctos_data.to_dict(orient="records")
+    arctos_data = {record["guid"]: record for record in arctos_data}
+
+    # Get all attribute data
+    attributes, unitless_attributes = get_attributes(specimens, arctos_data)
+
+    # Check for and eliminate duplicates
+    attributes = eliminate_duplicates(attributes)
+    unitless_attributes = eliminate_duplicates(unitless_attributes)
+
+    # Save data to files
+    csv_dataframe = pd.DataFrame.from_records(attributes)
+    csv_dataframe.to_csv(f"./output/numerical_attributes.csv", index=False)
+
+    # Filter out attributes which were found in arctos already
+    attributes = filter_attributes(attributes, arctos_data)
+    unitless_attributes = filter_attributes(unitless_attributes, arctos_data)
+
+    # Save data to files
+    csv_dataframe = pd.DataFrame.from_records(attributes)
+    csv_dataframe.to_csv(f"./output/numerical_attributes.csv", index=False)
+    
+    csv_dataframe = pd.DataFrame.from_records(unitless_attributes)
+    csv_dataframe.to_csv(f"./output/text_attributes.csv", index=False)
+
+    # Print summary of data
+    summary = summarize_data(attributes + unitless_attributes)
+    print(summary)
 
 
 if __name__ == "__main__":

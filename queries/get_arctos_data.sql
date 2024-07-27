@@ -1,7 +1,8 @@
 SELECT
     flat.collection_object_id,
-    guid,
-    ended_date,
+    flat.guid,
+    flat.ended_date,
+    flat.collectors,
     a0.attribute_value AS "total length",
     a1.attribute_value AS "tail length",
     a2.attribute_value AS "hind foot with claw",

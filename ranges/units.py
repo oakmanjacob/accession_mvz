@@ -38,7 +38,7 @@ class DistanceUnit(enum.Enum):
 
     @staticmethod
     def from_string(value: str):
-        if value == "in" or value == "in." or value == "inches":
+        if value == "in" or value == "in." or value == "inches" or value == "inch":
             return DistanceUnit.INCHES
         elif value == "mm":
             return DistanceUnit.MILLIMETERS

@@ -125,12 +125,12 @@ class Specimen:
             if value[0] is not None:
                 attributes.append({
                     "guid": self.guid,
-                    "attribute": attribute_type,
+                    "attribute_type": attribute_type,
                     "attribute_value": str(value[0]),
                     "attribute_units": value[1].value,
                     "attribute_date": self.collected_date,
                     "attribute_remark": value[2],
-                    "determiner": self.collectors,
+                    "attribute_determiner": self.collectors,
                 })
 
             elif value[2] is not None:
@@ -142,19 +142,19 @@ class Specimen:
         if len(unparsed_values) > 0:
             unitless_attributes.append({
                 "guid": self.guid,
-                "attribute": "unformatted measurements",
+                "attribute_type": "unformatted measurements",
                 "attribute_value": ", ".join(unparsed_values),
                 "attribute_date": self.collected_date,
-                "determiner": self.collectors,
+                "attribute_determiner": self.collectors,
             })
 
         if self.reproductive_data.repro_comments is not None:
             unitless_attributes.append({
                 "guid": self.guid,
-                "attribute": "reproductive data",
+                "attribute_type": "reproductive data",
                 "attribute_value": self.reproductive_data.repro_comments,
                 "attribute_date": self.collected_date,
-                "determiner": self.collectors,
+                "attribute_determiner": self.collectors,
             })
 
         return attributes, unitless_attributes
