@@ -81,12 +81,16 @@ class Specimen:
     
     def from_raw_record(raw_record):
         record = SheetParser.extract_record(raw_record)
-        
+
+        guid = SheetParser.parse_mvz_guid(record["mvz_num"])
         distance_unit = DistanceUnit.from_string(record["distance_unit"])
         weight_unit = WeightUnit.from_string(record["weight_unit"])
 
+        if record["review_needed"] is not None:
+            raise ReviewNeededException(guid, record["review_needed"])
+
         return Specimen(
-            guid = SheetParser.parse_mvz_guid(record["mvz_num"]),
+            guid = guid,
             collectors = record["collector"],
             collected_date = record["date"],
             common_data = CommonData(
@@ -109,7 +113,8 @@ class Specimen:
                 repro_comments = record["repro_comments"]
             )
         )
-        
+            
+
     def export_attributes(self) -> list:
         attributes = []
         unitless_attributes = []

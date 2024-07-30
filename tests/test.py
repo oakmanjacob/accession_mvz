@@ -3,8 +3,7 @@ import unittest
 from decimal import Decimal
 from deepdiff import DeepDiff
 
-from ranges.specimen import Specimen
-from ranges.sheets import SheetParser
+from ranges.specimen import Specimen, ReviewNeededException
 from ranges.units import DistanceUnit, WeightUnit
 
 class TestSpecimenParser(unittest.TestCase):
@@ -35,65 +34,65 @@ class TestSpecimenParser(unittest.TestCase):
         expected_attributes = [
             {
                 "guid": "MVZ:Mamm:12345",
-                "attribute": "total length",
+                "attribute_type": "total length",
                 "attribute_value": "95",
                 "attribute_units": "mm",
                 "attribute_date": "1982-06-28",
                 "attribute_remark": None,
-                "determiner": "Richard M. Warner",
+                "attribute_determiner": "Richard M. Warner",
             },
             {
                 "guid": "MVZ:Mamm:12345",
-                "attribute": "tail length",
+                "attribute_type": "tail length",
                 "attribute_value": "41",
                 "attribute_units": "mm",
                 "attribute_date": "1982-06-28",
                 "attribute_remark": None,
-                "determiner": "Richard M. Warner",
+                "attribute_determiner": "Richard M. Warner",
             },
             {
                 "guid": "MVZ:Mamm:12345",
-                "attribute": "hind foot with claw",
+                "attribute_type": "hind foot with claw",
                 "attribute_value": "11",
                 "attribute_units": "mm",
                 "attribute_date": "1982-06-28",
                 "attribute_remark": None,
-                "determiner": "Richard M. Warner",
+                "attribute_determiner": "Richard M. Warner",
             },
             {
                 "guid": "MVZ:Mamm:12345",
-                "attribute": "ear from notch",
+                "attribute_type": "ear from notch",
                 "attribute_value": "6",
                 "attribute_units": "mm",
                 "attribute_date": "1982-06-28",
                 "attribute_remark": None,
-                "determiner": "Richard M. Warner",
+                "attribute_determiner": "Richard M. Warner",
             },
             {
                 "guid": "MVZ:Mamm:12345",
-                "attribute": "weight",
+                "attribute_type": "weight",
                 "attribute_value": "4",
                 "attribute_units": "g",
                 "attribute_date": "1982-06-28",
                 "attribute_remark": None,
-                "determiner": "Richard M. Warner",
+                "attribute_determiner": "Richard M. Warner",
             },
         ]
 
         expected_unitless_attributes = [
             {
                 "guid": "MVZ:Mamm:12345",
-                "attribute": "unformatted measurements",
+                "attribute_type": "unformatted measurements",
                 "attribute_value": "Rt. side eaten by Siphid beetle in trap",
                 "attribute_date": "1982-06-28",
-                "determiner": "Richard M. Warner",
+                "attribute_determiner": "Richard M. Warner",
             },
             {
                 "guid": "MVZ:Mamm:12345",
-                "attribute": "reproductive data",
+                "attribute_type": "reproductive data",
                 "attribute_value": "T 3x2",
                 "attribute_date": "1982-06-28",
-                "determiner": "Richard M. Warner",
+                "attribute_determiner": "Richard M. Warner",
             }
         ]
 
@@ -161,40 +160,40 @@ class TestSpecimenParser(unittest.TestCase):
         expected_attributes = [
             {
                 "guid": "MVZ:Mamm:12345",
-                "attribute": "total length",
+                "attribute_type": "total length",
                 "attribute_value": "14.38",
                 "attribute_units": "in",
                 "attribute_date": "1982-06-28",
                 "attribute_remark": "14 3/8",
-                "determiner": "Richard M. Warner",
+                "attribute_determiner": "Richard M. Warner",
             },
             {
                 "guid": "MVZ:Mamm:12345",
-                "attribute": "hind foot with claw",
+                "attribute_type": "hind foot with claw",
                 "attribute_value": "4.62",
                 "attribute_units": "in",
                 "attribute_date": "1982-06-28",
                 "attribute_remark": "4 5/8",
-                "determiner": "Richard M. Warner",
+                "attribute_determiner": "Richard M. Warner",
             },
             {
                 "guid": "MVZ:Mamm:12345",
-                "attribute": "crown-rump length",
+                "attribute_type": "crown-rump length",
                 "attribute_value": "3.123",
                 "attribute_units": "in",
                 "attribute_date": "1982-06-28",
                 "attribute_remark": None,
-                "determiner": "Richard M. Warner",
+                "attribute_determiner": "Richard M. Warner",
             },
         ]
 
         expected_unitless_attributes = [
             {
                 "guid": "MVZ:Mamm:12345",
-                "attribute": "unformatted measurements",
+                "attribute_type": "unformatted measurements",
                 "attribute_value": "\"tail length\": \"13+\", \"weight\": \"4*\"",
                 "attribute_date": "1982-06-28",
-                "determiner": "Richard M. Warner",
+                "attribute_determiner": "Richard M. Warner",
             },
         ]
 
@@ -233,6 +232,34 @@ class TestSpecimenParser(unittest.TestCase):
 
         for expected_unitless_attribute in expected_unitless_attributes:
             self.assertIn(expected_unitless_attribute, unitless_attributes)
+
+    def test_review_needed(self):
+        raw_record = {
+            "MVZ #": "12345",
+            "collector": "Richard M. Warner",
+            "total": "14 3/8 in.",
+            "tail": "13+",
+            "hf": "4 5/8 ",
+            "ear": "Not Recorded",
+            "Notch": None,
+            "Crown": None,
+            "unit": "in",
+            "wt": "4*",
+            "units": "g",
+            "repro comments": "",
+            "testes L": None,
+            "testes W": "  ",
+            "emb count": "3",
+            "embs L": "2",
+            "embs R": "1",
+            "emb CR": "3.123",
+            "unformatted measurements": "  ",
+            "scars": None,
+            "REVIEW NEEDED": "total length needs review"
+        }
+
+        with self.assertRaises(ReviewNeededException):
+            specimen = Specimen.from_raw_record(raw_record)
 
 
 if __name__ == "__main__":

@@ -136,7 +136,7 @@ class SheetParser:
         "optional": True
     },
     {
-        "column_name": "REVIEW_NEEDED",
+        "column_name": "review_needed",
         "valid_names": ["REVIEW NEEDED"],
         "type": "text",
         "optional": True

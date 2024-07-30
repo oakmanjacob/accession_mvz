@@ -1,11 +1,13 @@
+import argparse
 import glob
-import math
 import logging
 
 import pandas as pd
 
 from ranges.sheets import SheetParser
 from ranges.specimen import Specimen, ReviewNeededException
+
+logger = logging.getLogger(__name__)
 
 def import_excel(file_name):
     accession_data = pd.read_excel(file_name, dtype=str)
@@ -55,7 +57,7 @@ def eliminate_duplicates(attributes):
     for attribute in attributes:
         key = f"{attribute['guid']}_{attribute['attribute_type']}"
         if key in existing_records:
-            logging.warning("Duplicate entries found for guid: %s, attribute: %s", attribute["guid"], attribute["attribute_type"])
+            logger.warning("Duplicate entries found for guid: %s, attribute: %s", attribute["guid"], attribute["attribute_type"])
         else:
             existing_records.add(key)
             result.append(attribute)
@@ -66,7 +68,7 @@ def filter_attributes(attributes, arctos_data):
     filtered_attributes = []
     for attribute in attributes:
         if attribute["guid"] not in arctos_data:
-            logging.warning("Guid: %s not found in arctos data!", attribute["guid"])
+            logger.warning("Guid: %s not found in arctos data!", attribute["guid"])
         elif arctos_data[attribute["guid"]][attribute["attribute_type"]] is None or arctos_data[attribute["guid"]][attribute["attribute_type"]] == "":
             filtered_attributes.append(attribute)
 
@@ -117,6 +119,9 @@ def main():
                     "reason": specimen[1]
                 })
 
+    if len(review_needed_csv) > 0:
+        logger.warning("Review Needed")
+
     review_needed_csv = pd.DataFrame.from_records(review_needed_csv)
     review_needed_csv.to_csv(f"./output/review_needed.csv", index=False)
         
@@ -126,7 +131,7 @@ def main():
         guids_file.write(", ".join([f"'{specimen_guid}'" for specimen_guid in specimen_guids]))
     
     # Import arctos data
-    arctos_data = pd.read_csv(".\\arctos\\arctos_data_accn14462.csv", dtype=str)
+    arctos_data = pd.read_csv(".\\arctos\\arctos_data_pema.csv", dtype=str)
     arctos_data = arctos_data.fillna("")
     arctos_data = arctos_data.to_dict(orient="records")
     arctos_data = {record["guid"]: record for record in arctos_data}
