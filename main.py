@@ -97,7 +97,17 @@ def summarize_data(attributes):
 
 
 def main():
-    accession_files = glob.glob(".\\data\\*.xlsx")
+    parser = argparse.ArgumentParser(
+                    prog='Arctosify',
+                    description='Converts accession and ranges sheets into a format which can be uploaded to Arctos')
+    
+    parser.add_argument('--arctos_data', type=str, default="arctos\\arctos_data.csv")
+    parser.add_argument('--input', type=str, default=".\\data\\*.xlsx")
+    parser.add_argument('--output_prefix', type=str, default="")
+    
+    args = parser.parse_args()
+
+    accession_files = glob.glob(args.input)
     accession_files.sort()
 
     # Import all specimens from Excel files
@@ -123,15 +133,15 @@ def main():
         logger.warning("Review Needed")
 
     review_needed_csv = pd.DataFrame.from_records(review_needed_csv)
-    review_needed_csv.to_csv(f"./output/review_needed.csv", index=False)
+    review_needed_csv.to_csv(f"./output/{args.output_prefix}review_needed.csv", index=False)
         
     # Export list of guids for arctos data input
     specimen_guids = set(specimen.guid for specimen in specimens)
-    with open("./output/required_guids.txt", "w", encoding="utf8") as guids_file:
+    with open(f"./output/{args.output_prefix}required_guids.txt", "w", encoding="utf8") as guids_file:
         guids_file.write(", ".join([f"'{specimen_guid}'" for specimen_guid in specimen_guids]))
     
     # Import arctos data
-    arctos_data = pd.read_csv(".\\arctos\\arctos_data_pema.csv", dtype=str)
+    arctos_data = pd.read_csv(args.arctos_data, dtype=str)
     arctos_data = arctos_data.fillna("")
     arctos_data = arctos_data.to_dict(orient="records")
     arctos_data = {record["guid"]: record for record in arctos_data}
@@ -143,20 +153,16 @@ def main():
     attributes = eliminate_duplicates(attributes)
     unitless_attributes = eliminate_duplicates(unitless_attributes)
 
-    # Save data to files
-    csv_dataframe = pd.DataFrame.from_records(attributes)
-    csv_dataframe.to_csv(f"./output/numerical_attributes.csv", index=False)
-
     # Filter out attributes which were found in arctos already
     attributes = filter_attributes(attributes, arctos_data)
     unitless_attributes = filter_attributes(unitless_attributes, arctos_data)
 
     # Save data to files
     csv_dataframe = pd.DataFrame.from_records(attributes)
-    csv_dataframe.to_csv(f"./output/numerical_attributes.csv", index=False)
+    csv_dataframe.to_csv(f"./output/{args.output_prefix}numerical_attributes.csv", index=False)
     
     csv_dataframe = pd.DataFrame.from_records(unitless_attributes)
-    csv_dataframe.to_csv(f"./output/text_attributes.csv", index=False)
+    csv_dataframe.to_csv(f"./output/{args.output_prefix}text_attributes.csv", index=False)
 
     # Print summary of data
     summary = summarize_data(attributes + unitless_attributes)
